@@ -6,6 +6,18 @@ A simple cli for querying elasticsearch. Outputs json.
 
 Launching the cli once will propagate ~/.tiny-elastic-cli.conf
 
+### Installing ###
+
+Global install
+
+`pip install tiny-elastic-cli`
+
+Local install
+
+`pip install --user tiny-elastic-cli`
+
+In the case of local install, the script will be available through `~/.local/bin/elastic` or similar. Consider adding `.local/bin` to your path.
+
 ## Usage ##
 
 `elastic --help`
@@ -13,10 +25,6 @@ Launching the cli once will propagate ~/.tiny-elastic-cli.conf
 `elastic 'foo:bar'`
 
 `elastic 'foo:bar' --source 'otherfield' | jq .`
-
-### Installing ###
-
-`pip install tiny-elastic-cli`
 
 ## License ##
 
