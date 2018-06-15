@@ -1,0 +1,73 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+import sys, re, os, re, json
+import certifi
+import argparse
+import configparser
+from elasticsearch import Elasticsearch
+from elasticsearch import helpers
+
+def redact_url(url):
+  if '@' not in url:
+    return url
+  return re.sub('(https?://)([^:]*:[^@]*@)?(.*)', r'\1***:***@\3', url, flags=re.IGNORECASE)
+
+def load_config():
+  conf_path = os.path.join(os.path.expanduser('~'), '.tiny-elastic-cli.conf')
+  config = configparser.ConfigParser(interpolation=None)
+  if not os.path.exists(conf_path):
+    print('Config file (%s) not found. Writing default.'%conf_path, file=sys.stderr)
+    config['default'] = {
+      'elastic_url': 'http://localhost:9200',
+      'index': '',
+      'doctype': ''
+    }
+    with open(conf_path, 'w') as cf:
+      config.write(cf)
+  config.read(conf_path)
+  elastic_url = config['default']['elastic_url']
+  elastic_index = config['default']['index']
+  elastic_doc_type = config['default']['doctype']
+  if elastic_doc_type.strip() == '': elastic_doc_type = None
+  return elastic_url, elastic_index, elastic_doc_type
+
+def load_args():
+  elastic_url, elastic_index, elastic_doc_type = load_config()
+  parser = argparse.ArgumentParser()
+  parser.add_argument('query', type=str, nargs='+', help='')
+  parser.add_argument('--url', dest='url', type=str, help='Default: %s'%redact_url(elastic_url), default=elastic_url)
+  parser.add_argument('--index', dest='index', type=str, help='Default: %s'%elastic_index, default=elastic_index)
+  parser.add_argument('--size', dest='size', type=int, help='Number of documents per scroll, default: 9999', default=9999)
+  parser.add_argument('--doctype', dest='doc_type', type=str, help='Document type to query for, default: all', default=elastic_doc_type)
+  parser.add_argument('--order', dest='order', action='store_true', help='Elastic scroll "keep_order", default: false', default=False)
+  parser.add_argument('--source', dest='source', nargs='+', help='Comma separated list of fields, default: all')
+  return parser.parse_args()
+
+def main():
+  args = load_args()
+  es = Elasticsearch([args.url])
+  results = helpers.scan(es,
+    index=args.index,
+    doc_type=args.doc_type,
+    preserve_order=args.order,
+    size=args.size,
+    query={
+      'query': {
+        'query_string': {
+          'query': ' '.join(args.query),
+          'default_operator': 'OR'
+        }
+      },
+      '_source': args.source if args.source is not None else []
+    },
+  )
+  try:
+    for item in results:
+      print(json.dumps(item))
+  except BrokenPipeError:
+    return 0
+  except KeyboardInterrupt:
+    return 0
+
+if __name__ == '__main__':
+  sys.exit(main())
