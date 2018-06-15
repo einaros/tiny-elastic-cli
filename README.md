@@ -10,7 +10,7 @@ Launching the cli once will propagate ~/.tiny-elastic-cli.conf
 
 `elastic --help`
 
-`elastic 'foo:bar' 
+`elastic 'foo:bar'`
 
 `elastic 'foo:bar' --source 'otherfield' | jq .`
 
