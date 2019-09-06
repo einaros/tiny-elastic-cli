@@ -5,7 +5,7 @@ with open('README.md', 'r') as fh:
 
 setuptools.setup(
   name='tiny-elastic-cli',
-  version='0.1.4',
+  version='0.1.5',
   author='Einar Otto Stangvik',
   author_email='einaros@gmail.com',
   description='A very tiny elasticsearch query cli',
